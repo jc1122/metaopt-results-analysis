@@ -1,0 +1,11 @@
+interface:
+  display_name: "Metaopt Results Analysis"
+  short_description: "Analyze experiment results against baselines and extract learnings"
+  categories:
+    - ml
+    - research
+    - analysis
+  default_prompt: >
+    Analyze the completed batch results against the campaign baseline.
+    Judge improvement or regression, extract key learnings, and identify
+    proposal invalidations for the next iteration.
