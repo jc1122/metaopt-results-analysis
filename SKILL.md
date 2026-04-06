@@ -18,6 +18,15 @@ This skill is a leaf worker in the `analysis` auxiliary slot. It is dispatched b
 
 The orchestrator provides all inputs via the subagent prompt. Do not assume access to any files, state, or campaign configuration beyond what is passed in.
 
+### Standard Envelope (provided by orchestrator on every dispatch)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `campaign_id` | string | Campaign identifier |
+| `current_iteration` | integer | Current iteration number |
+| `slot_id` | string | The slot ID dispatching this worker |
+| `attempt` | integer | Attempt number for this dispatch (1-indexed) |
+
 ### Batch Results Payload
 
 The results payload comes from the backend's `results_command` and follows the results contract shape:
@@ -34,8 +43,8 @@ The results payload comes from the backend's `results_command` and follows the r
 
 - `metric` — the metric being optimized
 - `direction` — `minimize` or `maximize`
-- `aggregation` — aggregation method (e.g., `weighted_mean`)
-- `weights` — per-dataset weights (when aggregation is `weighted_mean`)
+- `aggregation_method` — aggregation method (e.g., `weighted_mean`, `mean`)
+- `aggregation_weights` — per-dataset weights (when method is `weighted_mean`; `null` otherwise)
 - `improvement_threshold` — minimum magnitude of change to qualify as improvement
 
 ### Baselines
@@ -114,12 +123,24 @@ Aspects of the current experiment that deserve further exploration in future pro
 
 If nothing warrants carry-over, return an empty list and state why.
 
+### Persistence Note
+
+The orchestrator persists the structured output as `state.selected_experiment.analysis_summary` with the following shape:
+- `judgment`: the improvement/regression/neutral verdict
+- `new_aggregate`: the post-experiment aggregate score
+- `delta`: signed change from baseline
+- `learnings`: array of new key insights (appended to `state.key_learnings`)
+- `invalidations`: proposal invalidation recommendations (forwarded to rollover)
+- `carry_over_candidates`: aspects worth further exploration (forwarded to rollover)
+
+Structure your output to match this shape so the orchestrator can persist it without transformation.
+
 ## Judgment Criteria
 
 ### Computing the Aggregate Score
 
-1. Use the campaign's declared `aggregation` method
-2. For `weighted_mean`: compute `sum(weight_i * value_i) / sum(weight_i)` using the provided weights
+1. Use the campaign's declared `aggregation_method`
+2. For `weighted_mean`: compute `sum(weight_i * value_i) / sum(weight_i)` using `aggregation_weights`
 3. The metric name in the results must match `objective.metric` — if it doesn't, report an error rather than guessing
 
 ### Applying the Threshold
@@ -136,7 +157,7 @@ All comparisons must respect the objective direction. "Better" means higher when
 
 ## Behavioral Rules
 
-1. **Use the campaign's aggregation method and weights** to compute the aggregate score. Do not substitute a different aggregation.
+1. **Use `aggregation_method` and `aggregation_weights`** to compute the aggregate score. Do not substitute a different aggregation.
 2. **Compare against the declared improvement_threshold.** Small numerical changes below threshold are `neutral`, not `improvement`.
 3. **Respect the objective direction** (`minimize` vs `maximize`) in all comparisons and language.
 4. **Do not cherry-pick per-dataset results** to claim improvement when the aggregate regressed. The aggregate judgment is authoritative.
