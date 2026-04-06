@@ -183,3 +183,5 @@ All comparisons must respect the objective direction. "Better" means higher when
 - `ml-metaoptimization/references/worker-lanes.md` — authoritative analysis lane contract (inputs, outputs, purpose)
 - `ml-metaoptimization/references/backend-contract.md` — results payload shape (`best_aggregate_result`, `per_dataset`, `artifact_locations`)
 - `ml-metaoptimization/references/contracts.md` — state field definitions (`baseline`, `key_learnings`, `completed_experiments`, `objective_snapshot`)
+- `ml-metaoptimization/references/dispatch-guide.md` — defines `ANALYZE_RESULTS` state inputs/outputs and dispatch conventions
+- `ml-metaoptimization/references/state-machine.md` — defines `ANALYZE_RESULTS` transition semantics and guards
